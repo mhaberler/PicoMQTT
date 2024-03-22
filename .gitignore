@@ -2,3 +2,4 @@
 *.orig
 *.tar.gz
 *.sh
+.vscode
