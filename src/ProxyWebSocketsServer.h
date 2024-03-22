@@ -2,7 +2,6 @@
 #include <WiFi.h>
 
 #define TOWS_SIZE 2048
-void hexdump(const void *mem, uint32_t len, uint8_t cols = 16);
 
 
 void _proxyWebSocketEvent(WebSocketsServerCore *server, uint8_t num, WStype_t type, uint8_t * payload, size_t length);
@@ -24,14 +23,9 @@ class ProxyWebSocketsServer : public WebSocketsServer {
         _destPort(destPort),
         _timeout_ms(timeout_ms),
         WebSocketsServer(port, origin, protocol) {
-        const char * mandatoryHttpHeaders[] = {""};
-        onValidateHttpHeader(validateHttpHeader, mandatoryHttpHeaders, 0);
-
         begin();
         onEvent(_proxyWebSocketEvent);
-
     }
-    // virtual ~ProxyWebSocketsServer(void);
 
     void loop(void) {
         _loop();
