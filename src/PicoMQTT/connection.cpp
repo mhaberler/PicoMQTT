@@ -2,6 +2,7 @@
 #include "connection.h"
 #include "debug.h"
 
+
 namespace PicoMQTT {
 
 Connection::Connection(unsigned long keep_alive_seconds, unsigned long socket_timeout_seconds) :
@@ -61,6 +62,8 @@ void Connection::wait_for_reply(Packet::Type type, std::function<void(IncomingPa
 
     while (client.connected() && (millis() - start < client.socket_timeout_millis)) {
 
+        YIELD();
+
         IncomingPacket packet(client);
         if (!packet) {
             break;
@@ -94,38 +97,38 @@ void Connection::handle_packet(IncomingPacket & packet) {
 
     switch (packet.get_type()) {
         case Packet::PUBLISH: {
-            const uint16_t topic_size = packet.read_u16();
+                const uint16_t topic_size = packet.read_u16();
 
-            // const bool dup = (packet.get_flags() >> 3) & 0b1;
-            const uint8_t qos = (packet.get_flags() >> 1) & 0b11;
-            // const bool retain = packet.get_flags() & 0b1;
+                // const bool dup = (packet.get_flags() >> 3) & 0b1;
+                const uint8_t qos = (packet.get_flags() >> 1) & 0b11;
+                // const bool retain = packet.get_flags() & 0b1;
 
-            uint16_t msg_id = 0;
+                uint16_t msg_id = 0;
 
-            if (topic_size > PICOMQTT_MAX_TOPIC_SIZE) {
-                packet.ignore(topic_size);
-                on_topic_too_long(packet);
-                if (qos) {
-                    msg_id = packet.read_u16();
+                if (topic_size > PICOMQTT_MAX_TOPIC_SIZE) {
+                    packet.ignore(topic_size);
+                    on_topic_too_long(packet);
+                    if (qos) {
+                        msg_id = packet.read_u16();
+                    }
+                } else {
+                    char topic[topic_size + 1];
+                    if (!packet.read_string(topic, topic_size)) {
+                        // connection error
+                        return;
+                    }
+                    if (qos) {
+                        msg_id = packet.read_u16();
+                    }
+                    on_message(topic, packet);
                 }
-            } else {
-                char topic[topic_size + 1];
-                if (!packet.read_string(topic, topic_size)) {
-                    // connection error
-                    return;
-                }
-                if (qos) {
-                    msg_id = packet.read_u16();
-                }
-                on_message(topic, packet);
-            }
 
-            if (msg_id) {
-                send_ack(qos == 1 ? Packet::PUBACK : Packet::PUBREC, msg_id);
-            }
+                if (msg_id) {
+                    send_ack(qos == 1 ? Packet::PUBACK : Packet::PUBREC, msg_id);
+                }
 
-            break;
-        };
+                break;
+            };
 
         case Packet::PUBREC:
             send_ack(Packet::PUBREL, packet.read_u16());
@@ -164,6 +167,7 @@ void Connection::loop() {
 
     // only handle 10 packets max in one go to not starve other connections
     for (unsigned int i = 0; (i < 10) && client.available(); ++i) {
+        YIELD();
         IncomingPacket packet(client);
         if (!packet.is_valid()) {
             return;

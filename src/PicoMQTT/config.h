@@ -24,6 +24,14 @@
 #define PICOMQTT_OUTGOING_BUFFER_SIZE 128
 #endif
 
+#ifndef PICOMQTT_YIELD
+#define YIELD()
+#else
+#define YIELD() PICOMQTT_YIELD()
+#endif
+
+
+
 // #define PICOMQTT_DEBUG
 
 // #define PICOMQTT_DEBUG_TRACE_FUNCTIONS
