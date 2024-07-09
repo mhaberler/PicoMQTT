@@ -3,3 +3,6 @@
 *.tar.gz
 /examples.build
 /config.h
+web
+untracked
+.vscode
