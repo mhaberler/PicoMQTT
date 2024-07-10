@@ -33,7 +33,7 @@ class CustomMQTTServer: public PicoMQTT::Server {
     }
 };
 
-CustomMQTTServer::Server mqtt;
+CustomMQTTServer mqtt;
 
 void setup() {
 #ifdef M5UNIFIED
